@@ -57,6 +57,7 @@ namespace OWASP.WebGoat.NET.App_Code.DB
 
         public DataSet GetCatalogData()
         {
+            
             using (SqliteConnection connection = new SqliteConnection(_connectionString))
             {
                 connection.Open();
@@ -75,31 +76,37 @@ namespace OWASP.WebGoat.NET.App_Code.DB
             //encode password
             string encoded_password = Encoder.Encode(password);
             
-            //check email/password
-            string sql = "select * from CustomerLogin where email = '" + email + "' and password = '" + 
-                         encoded_password + "';";
+            //check email/password using parameterized query to prevent SQL injection
+            string sql = "select * from CustomerLogin where email = @email and password = @password;";
                         
             using (SqliteConnection connection = new SqliteConnection(_connectionString))
             {
                 connection.Open();
 
-                SqliteDataAdapter da = new SqliteDataAdapter(sql, connection);
-            
-                //TODO: User reader instead (for all calls)
-                DataSet ds = new DataSet();
-            
-                da.Fill(ds);
-                
-                try
+                using (SqliteCommand cmd = new SqliteCommand(sql, connection))
                 {
-                    return ds.Tables[0].Rows.Count == 0;
-                }
-                catch (Exception ex)
-                {
-                    //Log this and pass the ball along.
-                    log.Error("Error checking login", ex);
+                    //Add parameters to prevent SQL injection
+                    cmd.Parameters.AddWithValue("@email", email);
+                    cmd.Parameters.AddWithValue("@password", encoded_password);
                     
-                    throw new Exception("Error checking login", ex);
+                    SqliteDataAdapter da = new SqliteDataAdapter(cmd);
+                    
+                    //TODO: User reader instead (for all calls)
+                    DataSet ds = new DataSet();
+                
+                    da.Fill(ds);
+                    
+                    try
+                    {
+                        return ds.Tables[0].Rows.Count == 0;
+                    }
+                    catch (Exception ex)
+                    {
+                        //Log this and pass the ball along.
+                        log.Error("Error checking login", ex);
+                        
+                        throw new Exception("Error checking login", ex);
+                    }
                 }
             }
         }
