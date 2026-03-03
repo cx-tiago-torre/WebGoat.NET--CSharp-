@@ -1,7 +1,7 @@
 using System;
 using System.Data;
-using Mono.Data.Sqlite;
 using log4net;
+using Mono.Data.Sqlite;
 using System.Reflection;
 using System.IO;
 using System.Diagnostics;
@@ -27,7 +27,7 @@ namespace OWASP.WebGoat.NET.App_Code.DB
             _dbFileName = configFile.Get(DbConstants.KEY_FILE_NAME);
 
             if (!File.Exists(_dbFileName))
-                SqliteConnection.CreateFile(_dbFileName);
+                File.Create(_dbFileName).Dispose();
         }
 
         public bool TestConnection()
