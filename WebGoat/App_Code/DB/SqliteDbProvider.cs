@@ -57,6 +57,7 @@ namespace OWASP.WebGoat.NET.App_Code.DB
 
         public DataSet GetCatalogData()
         {
+            
             using (SqliteConnection connection = new SqliteConnection(_connectionString))
             {
                 connection.Open();
@@ -75,7 +76,7 @@ namespace OWASP.WebGoat.NET.App_Code.DB
             //encode password
             string encoded_password = Encoder.Encode(password);
             
-            //check email/password
+            //check email/password                           (SqliteDbProvider.cs > IsValidCustomerLogin)
             string sql = "select * from CustomerLogin where email = '" + email + "' and password = '" + 
                          encoded_password + "';";
                         
@@ -83,23 +84,30 @@ namespace OWASP.WebGoat.NET.App_Code.DB
             {
                 connection.Open();
 
-                SqliteDataAdapter da = new SqliteDataAdapter(sql, connection);
-            
-                //TODO: User reader instead (for all calls)
-                DataSet ds = new DataSet();
-            
-                da.Fill(ds);
-                
-                try
+                using (SqliteCommand cmd = new SqliteCommand(sql, connection))
                 {
-                    return ds.Tables[0].Rows.Count == 0;
-                }
-                catch (Exception ex)
-                {
-                    //Log this and pass the ball along.
-                    log.Error("Error checking login", ex);
+                    //Add parameters to prevent SQL injection
+                    cmd.Parameters.AddWithValue("@email", email);
+                    cmd.Parameters.AddWithValue("@password", encoded_password);
                     
-                    throw new Exception("Error checking login", ex);
+                    SqliteDataAdapter da = new SqliteDataAdapter(cmd);
+                    
+                    //TODO: User reader instead (for all calls)
+                    DataSet ds = new DataSet();
+                
+                    da.Fill(ds);
+                    
+                    try
+                    {
+                        return ds.Tables[0].Rows.Count == 0;
+                    }
+                    catch (Exception ex)
+                    {
+                        //Log this and pass the ball along.
+                        log.Error("Error checking login", ex);
+                        
+                        throw new Exception("Error checking login", ex);
+                    }
                 }
             }
         }
@@ -546,23 +554,27 @@ namespace OWASP.WebGoat.NET.App_Code.DB
             string output = "";
             try
             {
-            
+
                 using (SqliteConnection connection = new SqliteConnection(_connectionString))
                 {
                     connection.Open();
 
-                    string sql = "select email from CustomerLogin where customerNumber = " + num;
+                    // Use parameterized query to prevent SQL injection
+                    string sql = "select email from CustomerLogin where customerNumber = @customerNumber";
                     SqliteCommand cmd = new SqliteCommand(sql, connection);
-                    output = (string)cmd.ExecuteScalar();
+                    cmd.Parameters.AddWithValue("@customerNumber", num);
+
+                    object result = cmd.ExecuteScalar();
+                    output = result != null ? result.ToString() : "";
                 }
-                
+
             }
             catch (Exception ex)
             {
                 log.Error("Error getting email by customer number", ex);
                 output = ex.Message;
             }
-            
+
             return output;
         }
 
