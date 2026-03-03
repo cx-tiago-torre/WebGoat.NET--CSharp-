@@ -1,0 +1,66 @@
+using System;
+using System.Web;
+using System.Web.UI;
+using OWASP.WebGoat.NET.App_Code.DB;
+using OWASP.WebGoat.NET.App_Code;
+using log4net;
+using Newtonsoft.Json;
+using RestSharp;
+using System.Net.Http;
+using System.Reflection;
+
+namespace OWASP.WebGoat.NET
+{
+	public partial class Default : System.Web.UI.Page
+	{
+        private IDbProvider du = Settings.CurrentDbProvider;
+        
+        // Deprecated log4net method - use LogManager.GetLogger(typeof(Default)) instead
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        
+        // Deprecated RestSharp client creation
+        private RestClient restClient = new RestClient("https://api.example.com");
+        
+        protected void ButtonProceed_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("RebuildDatabase.aspx");
+        }
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            // Deprecated Newtonsoft.Json serialization method
+            var settings = new JsonSerializerSettings();
+            var json = JsonConvert.SerializeObject(new { test = "data" }, Formatting.None, settings); // Deprecated overload
+            
+            // Deprecated RestSharp Execute method
+            var request = new RestRequest("/test", Method.GET);
+            var response = restClient.Execute(request); // Deprecated - use ExecuteAsync instead
+            
+            // Deprecated HttpClient constructor
+            using (var httpClient = new HttpClient(new HttpClientHandler())) // Deprecated constructor pattern
+            {
+                log.Info("HTTP client created using deprecated constructor");
+            }
+            
+            //do a quick test.  If the database connects, inform the user the database seems to be working.
+            if (du.TestConnection())
+            {
+                lblOutput.Text = string.Format("You appear to be connected to a valid {0} provider. " +
+                                               "If you want to reconfigure or rebuild the database, click on the button below!", du.Name);
+                Session["DBConfigured"] = true;
+
+                //Info leak
+                HttpCookie cookie = new HttpCookie("Server", Encoder.Encode(Server.MachineName));
+                Response.Cookies.Add(cookie);
+            }
+            else
+            {
+                lblOutput.Text = "Before proceeding, please ensure this instance of WebGoat.NET can connect to the database!";
+            }
+
+            // Write viewState to Screen 
+            ViewState["Session"] = Session.SessionID;
+        }
+    }
+}
+

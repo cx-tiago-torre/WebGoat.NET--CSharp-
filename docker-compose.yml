@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  webgoat-app:
+    build: .
+    container_name: webgoat-vulnerable-app
+    ports:
+      - "8080:80"
+    depends_on:
+      - database
+      - redis
+    environment:
+      - DB_HOST=database
+      - REDIS_HOST=redis
+    networks:
+      - webgoat-network
+
+  # Vulnerable database with default credentials
+  database:
+    image: mysql:5.7.20  # Old version with known CVEs (CVE-2018-2696, CVE-2018-2703, etc.)
+    container_name: webgoat-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: webgoat
+      MYSQL_USER: webgoat
+      MYSQL_PASSWORD: password123
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db-init:/docker-entrypoint-initdb.d
+    networks:
+      - webgoat-network
+
+  # Vulnerable Redis instance (no auth, older version)
+  redis:
+    image: redis:4.0.14-alpine  # Version with CVE-2019-10192, CVE-2019-10193
+    container_name: webgoat-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ""  # No password - security vulnerability
+    networks:
+      - webgoat-network
+
+  # Vulnerable Elasticsearch (older version with multiple CVEs)
+  elasticsearch:
+    image: elasticsearch:6.4.0  # Version with CVE-2019-7619, CVE-2020-7009
+    container_name: webgoat-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false  # Security disabled - vulnerability
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - webgoat-network
+
+  # Vulnerable MongoDB (no authentication)
+  mongodb:
+    image: mongo:3.6.23  # Older version with CVE-2020-7928
+    container_name: webgoat-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    command: --auth --bind_ip_all  # Binding to all interfaces - potential security risk
+    networks:
+      - webgoat-network
+
+  # Vulnerable Apache HTTP Server
+  apache:
+    image: httpd:2.4.38-alpine  # Version with CVE-2019-0220, CVE-2019-10081
+    container_name: webgoat-apache
+    ports:
+      - "8081:80"
+    volumes:
+      - ./apache-config:/usr/local/apache2/conf
+    networks:
+      - webgoat-network
+
+  # Vulnerable Nginx
+  nginx:
+    image: nginx:1.15.8  # Version with CVE-2019-9511, CVE-2019-9513
+    container_name: webgoat-nginx
+    ports:
+      - "8082:80"
+    volumes:
+      - ./nginx-config:/etc/nginx/conf.d
+    networks:
+      - webgoat-network
+
+  # Vulnerable Jenkins (for CI/CD demonstration)
+  jenkins:
+    image: jenkins/jenkins:2.150.3  # Old version with multiple CVEs
+    container_name: webgoat-jenkins
+    ports:
+      - "8083:8080"
+    environment:
+      - JENKINS_OPTS="--httpPort=8080"
+      - JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    networks:
+      - webgoat-network
+
+  # Vulnerable Node.js application
+  nodejs-app:
+    image: node:10.24.0-alpine  # Vulnerable Node.js version
+    container_name: webgoat-nodejs
+    working_dir: /app
+    command: >
+      sh -c "
+      echo 'const express = require(\"express\");
+      const app = express();
+      // Vulnerable: Using eval with user input
+      app.get(\"/eval/:code\", (req, res) => {
+        try {
+          const result = eval(req.params.code);
+          res.json({result: result});
+        } catch(e) {
+          res.json({error: e.message});
+        }
+      });
+      app.listen(3000, \"0.0.0.0\");' > app.js &&
+      npm init -y &&
+      npm install express@4.16.4 &&
+      node app.js"
+    ports:
+      - "3000:3000"
+    networks:
+      - webgoat-network
+
+networks:
+  webgoat-network:
+    driver: bridge
+
+volumes:
+  jenkins_home:
