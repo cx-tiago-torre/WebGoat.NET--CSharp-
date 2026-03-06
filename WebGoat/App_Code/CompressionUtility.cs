@@ -468,5 +468,128 @@ namespace OWASP.WebGoat.NET
             }
         }
 
+        // ========== SQL INJECTION - EXPLOITABLE (END-TO-END) ==========
+        
+        /// <summary>
+        /// VULNERABLE: SQL Injection with complete attack vector (SOURCE TO SINK).
+        /// This demonstrates a proper end-to-end SQL injection vulnerability where:
+        /// 1. SOURCE: User input is received from an untrusted source
+        /// 2. SINK: The tainted input is used directly in a SQL query execution
+        /// 
+        /// Attack example: userId = "1' OR '1'='1" or userId = "1; DROP TABLE Users--"
+        /// </summary>
+        /// <param name="userId">User ID from untrusted input (TAINTED SOURCE)</param>
+        /// <param name="connectionString">Database connection string</param>
+        /// <returns>User information as string</returns>
+        public static string GetUserInfoVulnerable(string userId, string connectionString)
+        {
+            // VULNERABILITY: Direct string concatenation with untrusted user input
+            // This is the classic SQL injection pattern that SAST should detect
+            string query = "SELECT UserId, UserName, Email FROM Users WHERE UserId = '" + userId + "'";
+            
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // SINK: Executing the tainted query - THIS IS EXPLOITABLE
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            StringBuilder result = new StringBuilder();
+                            while (reader.Read())
+                            {
+                                result.AppendLine($"User ID: {reader["UserId"]}");
+                                result.AppendLine($"User Name: {reader["UserName"]}");
+                                result.AppendLine($"Email: {reader["Email"]}");
+                            }
+                            return result.ToString();
+                        }
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                // Log the error but this won't prevent the SQL injection
+                System.Diagnostics.Debug.WriteLine($"SQL Error: {ex.Message}");
+                throw;
+            }
+        }
+        
+        /// <summary>
+        /// VULNERABLE: Another SQL injection example - searching archive logs (SOURCE TO SINK).
+        /// This simulates searching archived compression logs in a database.
+        /// 
+        /// Attack example: searchTerm = "' OR 1=1--" or searchTerm = "'; DELETE FROM ArchiveLogs--"
+        /// </summary>
+        /// <param name="searchTerm">Search term from user input (TAINTED SOURCE)</param>
+        /// <param name="connectionString">Database connection string</param>
+        /// <returns>Search results</returns>
+        public static DataTable SearchArchiveLogsVulnerable(string searchTerm, string connectionString)
+        {
+            // VULNERABILITY: Unsanitized input concatenated into SQL query
+            string query = "SELECT * FROM ArchiveLogs WHERE FileName LIKE '%" + searchTerm + "%' OR Description LIKE '%" + searchTerm + "%'";
+            
+            DataTable results = new DataTable();
+            
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // SINK: Executing vulnerable query with tainted data
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                        {
+                            adapter.Fill(results);  // EXPLOITABLE: Tainted query execution
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Database error: {ex.Message}");
+                throw;
+            }
+            
+            return results;
+        }
+        
+        /// <summary>
+        /// Simulates receiving user input from an HTTP request (SOURCE).
+        /// This represents the entry point where untrusted data enters the application.
+        /// In a real application, this would come from Request.QueryString, Request.Form, etc.
+        /// </summary>
+        /// <param name="inputParam">Raw user input</param>
+        /// <returns>The untrusted input that will flow to SQL sink</returns>
+        public static string ReceiveUserInput(string inputParam)
+        {
+            // SOURCE: This represents untrusted user input
+            // In real scenarios: HttpContext.Current.Request.QueryString["userId"]
+            return inputParam;
+        }
+        
+        /// <summary>
+        /// Demonstrates the complete attack flow from source to sink.
+        /// This method shows how tainted data flows through the application.
+        /// </summary>
+        public static string DemonstrateVulnerableFlow(string userInput, string connectionString)
+        {
+            // SOURCE: Receive untrusted input
+            string taintedUserId = ReceiveUserInput(userInput);
+            
+            // FLOW: The tainted data flows through the application
+            // No sanitization or validation occurs here
+            
+            // SINK: Tainted data reaches the SQL execution point
+            string result = GetUserInfoVulnerable(taintedUserId, connectionString);
+            
+            return result;
+        }
+
     }
 }
