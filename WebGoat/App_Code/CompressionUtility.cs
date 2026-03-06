@@ -39,16 +39,29 @@ namespace OWASP.WebGoat.NET
             if (string.IsNullOrEmpty(input))
                 return null;
 
-            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
-            
-            using (MemoryStream outputStream = new MemoryStream())
+            try
             {
-                using (GZipOutputStream gzipStream = new GZipOutputStream(outputStream))
+                byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+                
+                using (MemoryStream outputStream = new MemoryStream())
                 {
-                    gzipStream.Write(inputBytes, 0, inputBytes.Length);
-                    gzipStream.Finish();
+                    using (GZipOutputStream gzipStream = new GZipOutputStream(outputStream))
+                    {
+                        gzipStream.Write(inputBytes, 0, inputBytes.Length);
+                        gzipStream.Finish();
+                    }
+                    return outputStream.ToArray();
                 }
-                return outputStream.ToArray();
+            }
+            catch (ArgumentException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Invalid argument in compression: {ex.Message}");
+                throw;
+            }
+            catch (IOException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"IO error during compression: {ex.Message}");
+                throw;
             }
         }
 
@@ -63,17 +76,30 @@ namespace OWASP.WebGoat.NET
             if (compressedData == null || compressedData.Length == 0)
                 return null;
 
-            using (MemoryStream inputStream = new MemoryStream(compressedData))
-            using (GZipInputStream gzipStream = new GZipInputStream(inputStream))
-            using (MemoryStream outputStream = new MemoryStream())
+            try
             {
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = gzipStream.Read(buffer, 0, buffer.Length)) > 0)
+                using (MemoryStream inputStream = new MemoryStream(compressedData))
+                using (GZipInputStream gzipStream = new GZipInputStream(inputStream))
+                using (MemoryStream outputStream = new MemoryStream())
                 {
-                    outputStream.Write(buffer, 0, bytesRead);
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = gzipStream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        outputStream.Write(buffer, 0, bytesRead);
+                    }
+                    return Encoding.UTF8.GetString(outputStream.ToArray());
                 }
-                return Encoding.UTF8.GetString(outputStream.ToArray());
+            }
+            catch (ICSharpCode.SharpZipLib.GZip.GZipException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Invalid GZip data: {ex.Message}");
+                throw;
+            }
+            catch (IOException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"IO error during decompression: {ex.Message}");
+                throw;
             }
         }
 
@@ -87,24 +113,37 @@ namespace OWASP.WebGoat.NET
         /// <returns>Byte array containing the zip archive</returns>
         public static byte[] CreateZipArchive(string fileName, string content)
         {
-            using (MemoryStream outputStream = new MemoryStream())
+            try
             {
-                using (ZipOutputStream zipStream = new ZipOutputStream(outputStream))
+                using (MemoryStream outputStream = new MemoryStream())
                 {
-                    zipStream.SetLevel(9); // 0-9, 9 being the highest compression
-                    
-                    ZipEntry entry = new ZipEntry(fileName);
-                    entry.DateTime = DateTime.Now;
-                    
-                    zipStream.PutNextEntry(entry);
-                    
-                    byte[] contentBytes = Encoding.UTF8.GetBytes(content);
-                    zipStream.Write(contentBytes, 0, contentBytes.Length);
-                    
-                    zipStream.CloseEntry();
-                    zipStream.Finish();
+                    using (ZipOutputStream zipStream = new ZipOutputStream(outputStream))
+                    {
+                        zipStream.SetLevel(9); // 0-9, 9 being the highest compression
+                        
+                        ZipEntry entry = new ZipEntry(fileName);
+                        entry.DateTime = DateTime.Now;
+                        
+                        zipStream.PutNextEntry(entry);
+                        
+                        byte[] contentBytes = Encoding.UTF8.GetBytes(content);
+                        zipStream.Write(contentBytes, 0, contentBytes.Length);
+                        
+                        zipStream.CloseEntry();
+                        zipStream.Finish();
+                    }
+                    return outputStream.ToArray();
                 }
-                return outputStream.ToArray();
+            }
+            catch (ArgumentException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Invalid argument creating zip archive: {ex.Message}");
+                throw;
+            }
+            catch (IOException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"IO error creating zip archive: {ex.Message}");
+                throw;
             }
         }
 
@@ -118,22 +157,35 @@ namespace OWASP.WebGoat.NET
         /// <returns>Byte array containing the tar archive</returns>
         public static byte[] CreateTarArchive(string fileName, string content)
         {
-            using (MemoryStream outputStream = new MemoryStream())
+            try
             {
-                using (TarOutputStream tarStream = new TarOutputStream(outputStream))
+                using (MemoryStream outputStream = new MemoryStream())
                 {
-                    byte[] contentBytes = Encoding.UTF8.GetBytes(content);
-                    
-                    TarEntry entry = TarEntry.CreateTarEntry(fileName);
-                    entry.Size = contentBytes.Length;
-                    entry.ModTime = DateTime.Now;
-                    
-                    tarStream.PutNextEntry(entry);
-                    tarStream.Write(contentBytes, 0, contentBytes.Length);
-                    tarStream.CloseEntry();
-                    tarStream.Finish();
+                    using (TarOutputStream tarStream = new TarOutputStream(outputStream))
+                    {
+                        byte[] contentBytes = Encoding.UTF8.GetBytes(content);
+                        
+                        TarEntry entry = TarEntry.CreateTarEntry(fileName);
+                        entry.Size = contentBytes.Length;
+                        entry.ModTime = DateTime.Now;
+                        
+                        tarStream.PutNextEntry(entry);
+                        tarStream.Write(contentBytes, 0, contentBytes.Length);
+                        tarStream.CloseEntry();
+                        tarStream.Finish();
+                    }
+                    return outputStream.ToArray();
                 }
-                return outputStream.ToArray();
+            }
+            catch (ArgumentException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Invalid argument creating tar archive: {ex.Message}");
+                throw;
+            }
+            catch (IOException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"IO error creating tar archive: {ex.Message}");
+                throw;
             }
         }
 
@@ -148,15 +200,28 @@ namespace OWASP.WebGoat.NET
             if (input == null || input.Length == 0)
                 return null;
 
-            using (MemoryStream outputStream = new MemoryStream())
+            try
             {
-                using (ICSharpCode.SharpZipLib.Zip.Compression.Streams.DeflaterOutputStream deflateStream = 
-                    new ICSharpCode.SharpZipLib.Zip.Compression.Streams.DeflaterOutputStream(outputStream))
+                using (MemoryStream outputStream = new MemoryStream())
                 {
-                    deflateStream.Write(input, 0, input.Length);
-                    deflateStream.Finish();
+                    using (ICSharpCode.SharpZipLib.Zip.Compression.Streams.DeflaterOutputStream deflateStream = 
+                        new ICSharpCode.SharpZipLib.Zip.Compression.Streams.DeflaterOutputStream(outputStream))
+                    {
+                        deflateStream.Write(input, 0, input.Length);
+                        deflateStream.Finish();
+                    }
+                    return outputStream.ToArray();
                 }
-                return outputStream.ToArray();
+            }
+            catch (ArgumentException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Invalid argument in deflate compression: {ex.Message}");
+                throw;
+            }
+            catch (IOException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"IO error during deflate compression: {ex.Message}");
+                throw;
             }
         }
 
@@ -171,18 +236,31 @@ namespace OWASP.WebGoat.NET
             if (compressedData == null || compressedData.Length == 0)
                 return null;
 
-            using (MemoryStream inputStream = new MemoryStream(compressedData))
-            using (ICSharpCode.SharpZipLib.Zip.Compression.Streams.InflaterInputStream inflateStream = 
-                new ICSharpCode.SharpZipLib.Zip.Compression.Streams.InflaterInputStream(inputStream))
-            using (MemoryStream outputStream = new MemoryStream())
+            try
             {
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = inflateStream.Read(buffer, 0, buffer.Length)) > 0)
+                using (MemoryStream inputStream = new MemoryStream(compressedData))
+                using (ICSharpCode.SharpZipLib.Zip.Compression.Streams.InflaterInputStream inflateStream = 
+                    new ICSharpCode.SharpZipLib.Zip.Compression.Streams.InflaterInputStream(inputStream))
+                using (MemoryStream outputStream = new MemoryStream())
                 {
-                    outputStream.Write(buffer, 0, bytesRead);
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = inflateStream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        outputStream.Write(buffer, 0, bytesRead);
+                    }
+                    return outputStream.ToArray();
                 }
-                return outputStream.ToArray();
+            }
+            catch (ICSharpCode.SharpZipLib.SharpZipBaseException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Invalid compressed data: {ex.Message}");
+                throw;
+            }
+            catch (IOException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"IO error during deflate decompression: {ex.Message}");
+                throw;
             }
         }
 
@@ -289,21 +367,31 @@ namespace OWASP.WebGoat.NET
             string command = "cmd.exe";
             string arguments = "/c type " + fileName;  // EXPLOITABLE: No input validation!
             
-            ProcessStartInfo startInfo = new ProcessStartInfo
+            try
             {
-                FileName = command,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            
-            using (Process process = Process.Start(startInfo))
-            {
-                string output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit();
-                return output;
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = command,
+                    Arguments = arguments,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                
+                using (Process process = Process.Start(startInfo))
+                {
+                    string output = process.StandardOutput.ReadToEnd();
+                    process.WaitForExit();
+                    return output;
+                }
             }
+            catch (Exception)
+            {
+                // IMPROPER EXCEPTION HANDLING #1: Empty catch block - swallows all exceptions
+                // This hides errors and makes debugging impossible
+            }
+            
+            return string.Empty;
         }
 
         // ========== INSECURE DESERIALIZATION - EXPLOITABLE ==========
@@ -323,12 +411,22 @@ namespace OWASP.WebGoat.NET
             // It can execute arbitrary code through gadget chains
             BinaryFormatter formatter = new BinaryFormatter();
             
-            using (MemoryStream stream = new MemoryStream(serializedData))
+            try
             {
-                // EXPLOITABLE: No type validation or restrictions
-                // Attacker can provide malicious serialized payload
-                object deserializedObject = formatter.Deserialize(stream);
-                return deserializedObject;
+                using (MemoryStream stream = new MemoryStream(serializedData))
+                {
+                    // EXPLOITABLE: No type validation or restrictions
+                    // Attacker can provide malicious serialized payload
+                    object deserializedObject = formatter.Deserialize(stream);
+                    return deserializedObject;
+                }
+            }
+            catch (Exception ex)
+            {
+                // IMPROPER EXCEPTION HANDLING #2: Catching generic Exception and only logging
+                // Does not rethrow, masks the actual problem, returns null on all errors
+                System.Diagnostics.Debug.WriteLine("Deserialization error: " + ex.Message);
+                return null;
             }
         }
         
@@ -339,11 +437,20 @@ namespace OWASP.WebGoat.NET
         /// <returns>Serialized byte array</returns>
         public static byte[] SerializeObject(object obj)
         {
-            BinaryFormatter formatter = new BinaryFormatter();
-            using (MemoryStream stream = new MemoryStream())
+            try
             {
-                formatter.Serialize(stream, obj);
-                return stream.ToArray();
+                BinaryFormatter formatter = new BinaryFormatter();
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    formatter.Serialize(stream, obj);
+                    return stream.ToArray();
+                }
+            }
+            catch
+            {
+                // IMPROPER EXCEPTION HANDLING #3: Bare catch without exception type
+                // Catches all exceptions including critical ones, returns null silently
+                return null;
             }
         }
 
@@ -362,20 +469,29 @@ namespace OWASP.WebGoat.NET
         /// <returns>MD5 hash (INSECURE)</returns>
         public static string HashPasswordMD5(string password)
         {
-            // VULNERABILITY: MD5 is broken and unsuitable for password hashing
-            using (MD5 md5 = MD5.Create())
+            try
             {
-                byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-                byte[] hashBytes = md5.ComputeHash(passwordBytes);
-                
-                // Convert to hex string
-                StringBuilder sb = new StringBuilder();
-                foreach (byte b in hashBytes)
+                // VULNERABILITY: MD5 is broken and unsuitable for password hashing
+                using (MD5 md5 = MD5.Create())
                 {
-                    sb.Append(b.ToString("x2"));
+                    byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
+                    byte[] hashBytes = md5.ComputeHash(passwordBytes);
+                    
+                    // Convert to hex string
+                    StringBuilder sb = new StringBuilder();
+                    foreach (byte b in hashBytes)
+                    {
+                        sb.Append(b.ToString("x2"));
+                    }
+                    
+                    return sb.ToString();  // EXPLOITABLE: Weak hash easily cracked
                 }
-                
-                return sb.ToString();  // EXPLOITABLE: Weak hash easily cracked
+            }
+            catch (Exception)
+            {
+                // IMPROPER EXCEPTION HANDLING #4: Catches Exception, no logging, returns empty
+                // Silently fails without any indication of what went wrong
+                return string.Empty;
             }
         }
         
@@ -388,19 +504,29 @@ namespace OWASP.WebGoat.NET
         /// <returns>SHA1 hash (INSECURE)</returns>
         public static string SignDataSHA1(string data)
         {
-            // VULNERABILITY: SHA1 is cryptographically broken
-            using (SHA1 sha1 = SHA1.Create())
+            try
             {
-                byte[] dataBytes = Encoding.UTF8.GetBytes(data);
-                byte[] hashBytes = sha1.ComputeHash(dataBytes);
-                
-                StringBuilder sb = new StringBuilder();
-                foreach (byte b in hashBytes)
+                // VULNERABILITY: SHA1 is cryptographically broken
+                using (SHA1 sha1 = SHA1.Create())
                 {
-                    sb.Append(b.ToString("x2"));
+                    byte[] dataBytes = Encoding.UTF8.GetBytes(data);
+                    byte[] hashBytes = sha1.ComputeHash(dataBytes);
+                    
+                    StringBuilder sb = new StringBuilder();
+                    foreach (byte b in hashBytes)
+                    {
+                        sb.Append(b.ToString("x2"));
+                    }
+                    
+                    return sb.ToString();  // EXPLOITABLE: Weak signature vulnerable to collision attacks
                 }
-                
-                return sb.ToString();  // EXPLOITABLE: Weak signature vulnerable to collision attacks
+            }
+            catch (Exception ex)
+            {
+                // IMPROPER EXCEPTION HANDLING #5: Catches Exception with minimal logging
+                // Returns generic fallback value that could mask security issues
+                Console.WriteLine(ex.Message);
+                return "0000000000000000000000000000000000000000";  // Returns fake hash
             }
         }
 
