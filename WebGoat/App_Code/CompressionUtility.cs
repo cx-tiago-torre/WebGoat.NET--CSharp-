@@ -6,11 +6,14 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Zip;
 using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Core;
+using Mono.Data.Sqlite;
 
 namespace OWASP.WebGoat.NET
 {
@@ -468,78 +471,34 @@ namespace OWASP.WebGoat.NET
             }
         }
 
-        //Find the bugs!
-        public string CustomCustomerLogin(string email, string password)
+        // Stored XSS source
+        public DataSet GetProductDetails(string productCode)
         {
-            string error_message = null;
-            try
+            string sql = string.Empty;
+            SqliteDataAdapter da;
+            DataSet ds = new DataSet();
+
+
+            using (SqliteConnection connection = new SqliteConnection(_connectionString))
             {
-                //get data
-                string sql = "select * from CustomerLogin where email = '" + email + "';";
-                
-                using (SqliteConnection connection = new SqliteConnection(_connectionString))
-                {
-                    connection.Open();
+                connection.Open();
 
-                    SqliteDataAdapter da = new SqliteDataAdapter(sql, connection);
-                    DataSet ds = new DataSet();
-                    da.Fill(ds);
+                sql = "select * from Products where productCode = '" + productCode + "'";
+                da = new SqliteDataAdapter(sql, connection);
+                da.Fill(ds, "products");
 
-                    //check if email address exists
-                    if (ds.Tables[0].Rows.Count == 0)
-                    {
-                        error_message = "Email Address Not Found!";
-                        return error_message;
-                    }
+                sql = "select * from Comments where productCode = '" + productCode + "'";
+                da = new SqliteDataAdapter(sql, connection);
+                da.Fill(ds, "comments");
 
-                    string encoded_password = ds.Tables[0].Rows[0]["Password"].ToString();
-                    string decoded_password = Encoder.Decode(encoded_password);
+                DataRelation dr = new DataRelation("prod_comments",
+                ds.Tables["products"].Columns["productCode"], //category table
+                ds.Tables["comments"].Columns["productCode"], //product table
+                false);
 
-                    if (password.Trim().ToLower() != decoded_password.Trim().ToLower())
-                    {
-                        error_message = "Password Not Valid For This Email Address!";
-                    }
-                    else
-                    {
-                        //login successful
-                        error_message = null;
-                    }
-                }
-                
+                ds.Relations.Add(dr);
+                return ds;
             }
-            catch (SqliteException ex)
-            {
-                log.Error("Error with custom customer login", ex);
-                error_message = ex.Message;
-            }
-            catch (Exception ex)
-            {
-                log.Error("Error with custom customer login", ex);
-            }
-
-            return error_message;    
-        }
-
-        public string GetCustomerEmail(string customerNumber)
-        {
-            string output = null;
-            try
-            {
-            
-                using (SqliteConnection connection = new SqliteConnection(_connectionString))
-                {
-                    connection.Open();
-
-                    string sql = "select email from CustomerLogin where customerNumber = " + customerNumber;
-                    SqliteCommand command = new SqliteCommand(sql, connection);
-                    output = command.ExecuteScalar().ToString();
-                } 
-            }
-            catch (Exception ex)
-            {
-                output = ex.Message;
-            }
-            return output;
         }
 
     }
