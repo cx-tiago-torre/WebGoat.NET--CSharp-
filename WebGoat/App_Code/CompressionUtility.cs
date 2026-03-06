@@ -17,12 +17,6 @@ namespace OWASP.WebGoat.NET
     /// <summary>
     /// Utility class for compression operations using SharpZipLib.
     /// 
-    /// NOTE: This class uses SharpZipLib 0.86.0 which has CVE-2021-32840 (Path Traversal vulnerability).
-    /// However, this implementation only uses NON-VULNERABLE methods:
-    /// - Archive creation (ZipOutputStream, TarOutputStream, GZipOutputStream)
-    /// - In-memory compression/decompression
-    /// - Stream-based operations
-    /// 
     /// CVE-2021-32840 specifically affects EXTRACTION methods (ZipFile.ExtractAll, TarArchive.ExtractContents)
     /// which allow path traversal during extraction. This class does NOT use any extraction methods.
     /// </summary>
@@ -532,4 +526,3 @@ namespace OWASP.WebGoat.NET
 
     }
 }
-
