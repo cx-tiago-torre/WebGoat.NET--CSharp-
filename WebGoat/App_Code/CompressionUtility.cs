@@ -314,21 +314,6 @@ namespace OWASP.WebGoat.NET
             public const string ExampleWeakPassword = "password123";
             
             /// <summary>
-            /// Example of a STRONG password shown to users (NOT A REAL CREDENTIAL)
-            /// </summary>
-            public const string ExampleStrongPassword = "MyP@ssw0rd!2024";
-            
-            /// <summary>
-            /// Default placeholder text for password fields (NOT A REAL CREDENTIAL)
-            /// </summary>
-            public const string PasswordPlaceholder = "Enter your password";
-            
-            /// <summary>
-            /// Example admin username for demo purposes (NOT A REAL CREDENTIAL)
-            /// </summary>
-            public const string ExampleAdminUser = "admin";
-            
-            /// <summary>
             /// Generates password strength indicator HTML with example passwords.
             /// These hard-coded strings are display-only and NOT used for authentication.
             /// </summary>
@@ -445,47 +430,6 @@ namespace OWASP.WebGoat.NET
                 // IMPROPER EXCEPTION HANDLING #3: Bare catch without exception type
                 // Catches all exceptions including critical ones, returns null silently
                 return null;
-            }
-        }
-
-        // ========== WEAK CRYPTOGRAPHY - EXPLOITABLE ==========
-        
-        /// <summary>
-        /// VULNERABLE: Uses MD5 for password hashing (EXPLOITABLE WEAK CRYPTOGRAPHY).
-        /// MD5 is cryptographically broken and should NEVER be used for password hashing.
-        /// It is vulnerable to:
-        /// 1. Collision attacks
-        /// 2. Rainbow table attacks
-        /// 3. Brute force attacks (extremely fast to compute)
-        /// Passwords can be easily recovered using tools like hashcat or online rainbow tables.
-        /// </summary>
-        /// <param name="password">Plain text password</param>
-        /// <returns>MD5 hash (INSECURE)</returns>
-        public static string HashPasswordMD5(string password)
-        {
-            try
-            {
-                // VULNERABILITY: MD5 is broken and unsuitable for password hashing
-                using (MD5 md5 = MD5.Create())
-                {
-                    byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-                    byte[] hashBytes = md5.ComputeHash(passwordBytes);
-                    
-                    // Convert to hex string
-                    StringBuilder sb = new StringBuilder();
-                    foreach (byte b in hashBytes)
-                    {
-                        sb.Append(b.ToString("x2"));
-                    }
-                    
-                    return sb.ToString();  // EXPLOITABLE: Weak hash easily cracked
-                }
-            }
-            catch (Exception)
-            {
-                // IMPROPER EXCEPTION HANDLING #4: Catches Exception, no logging, returns empty
-                // Silently fails without any indication of what went wrong
-                return string.Empty;
             }
         }
         
