@@ -333,36 +333,6 @@ namespace OWASP.WebGoat.NET.WebGoatCoins
             }
         }
 
-        // ========== HARD-CODED CREDENTIALS - NOT EXPLOITABLE ==========
-        public static class PasswordComplexityExamples
-        {
-            // SAST will flag these as hard-coded passwords
-            // But they are NOT actual credentials - just UI examples
-            
-            /// <summary>
-            /// Example of a WEAK password shown to users (NOT A REAL CREDENTIAL)
-            /// </summary>
-            public const string ExampleWeakPassword = "password123";
-            public const string ExampleStrongPassword = "Str0ngP@ssw0rd!";
-            
-            /// <summary>
-            /// Generates password strength indicator HTML with example passwords.
-            /// These hard-coded strings are display-only and NOT used for authentication.
-            /// </summary>
-            /// <returns>HTML showing password examples</returns>
-            public static string GetPasswordStrengthExamples()
-            {
-                // SAST may flag this due to "password" strings
-                // But this is NOT exploitable - it's just UI guidance
-                HttpCookie cookie = new HttpCookie("encr_sec_qu_ans");
-
-                return "<div class='password-examples'>" +
-                       "<p>Weak: " + ExampleWeakPassword + "</p>" +
-                       "<p>Strong: " + ExampleStrongPassword + "</p>" +
-                       "</div>";
-            }
-        }
-
         /// <summary>
         /// VULNERABLE: Uses SHA1 for signing sensitive data (EXPLOITABLE WEAK CRYPTOGRAPHY).
         /// SHA1 is deprecated and vulnerable to collision attacks. It should not be used
@@ -380,7 +350,7 @@ namespace OWASP.WebGoat.NET.WebGoatCoins
                     byte[] dataBytes = Encoding.UTF8.GetBytes(data);
                     byte[] hashBytes = sha1.ComputeHash(dataBytes);
 
-                    
+                    HttpCookie cookie = new HttpCookie("encr_sec_qu_ans");
                     
                     StringBuilder sb = new StringBuilder();
                     foreach (byte b in hashBytes)
