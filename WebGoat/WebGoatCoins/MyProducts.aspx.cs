@@ -435,7 +435,7 @@ namespace OWASP.WebGoat.NET.WebGoatCoins
 
 
 
-
+/*
 
 
 
@@ -460,3 +460,4 @@ namespace OWASP.WebGoat.NET.WebGoatCoins
     }
 
 }
+*/
