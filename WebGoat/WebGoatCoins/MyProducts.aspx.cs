@@ -28,6 +28,7 @@ namespace OWASP.WebGoat.NET.WebGoatCoins
     {
 
         private IDbProvider du = Settings.CurrentDbProvider;
+        private readonly string _connectionString;
         
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -343,6 +344,7 @@ namespace OWASP.WebGoat.NET.WebGoatCoins
             /// Example of a WEAK password shown to users (NOT A REAL CREDENTIAL)
             /// </summary>
             public const string ExampleWeakPassword = "password123";
+            public const string ExampleStrongPassword = "Str0ngP@ssw0rd!";
             
             /// <summary>
             /// Generates password strength indicator HTML with example passwords.
