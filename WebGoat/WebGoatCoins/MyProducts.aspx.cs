@@ -402,32 +402,3 @@ namespace OWASP.WebGoat.NET.WebGoatCoins
 
     }
 }
-
-
-
-/*
-
-
-
-
-
-
-
-    public partial class ProductDetails : System.Web.UI.Page
-    {
-        private IDbProvider du = Settings.CurrentDbProvider;
-        string customerNumber = Request.Cookies["customerNumber"].Value;
-        string output = null;
-
-        using (SqliteConnection connection = new SqliteConnection(_connectionString))
-        {
-            connection.Open();
-
-            string sql = "select email from CustomerLogin where customerNumber = " + customerNumber;
-            SqliteCommand command = new SqliteCommand(sql, connection);
-            output = command.ExecuteScalar().ToString();
-        }
-    }
-
-}
-*/
