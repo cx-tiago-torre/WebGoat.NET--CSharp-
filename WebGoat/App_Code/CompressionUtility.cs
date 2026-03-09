@@ -471,34 +471,111 @@ namespace OWASP.WebGoat.NET
             }
         }
 
-        // Stored XSS source
-        public DataSet GetProductDetails(string productCode)
+        public partial class ReflectedXSS : System.Web.UI.Page
         {
-            string sql = string.Empty;
-            SqliteDataAdapter da;
-            DataSet ds = new DataSet();
-
-
-            using (SqliteConnection connection = new SqliteConnection(_connectionString))
+            private IDbProvider du = Settings.CurrentDbProvider;
+            
+            protected void Page_Load(object sender, EventArgs e)
             {
-                connection.Open();
-
-                sql = "select * from Products where productCode = '" + productCode + "'";
-                da = new SqliteDataAdapter(sql, connection);
-                da.Fill(ds, "products");
-
-                sql = "select * from Comments where productCode = '" + productCode + "'";
-                da = new SqliteDataAdapter(sql, connection);
-                da.Fill(ds, "comments");
-
-                DataRelation dr = new DataRelation("prod_comments",
-                ds.Tables["products"].Columns["productCode"], //category table
-                ds.Tables["comments"].Columns["productCode"], //product table
-                false);
-
-                ds.Relations.Add(dr);
-                return ds;
+                if (Request["city"] != null)
+                    LoadCity(Request["city"]);
             }
+
+            void LoadCity (String city)
+            {
+                DataSet ds = du.GetOffice(city);
+                lblOutput.Text = "Here are the details for our " + city + " Office";
+                dtlView.DataSource = ds.Tables[0];
+                dtlView.DataBind();
+            }
+
+            void FixedLoadCity (String city)
+            {
+                DataSet ds = du.GetOffice(city);
+                lblOutput.Text = "Here are the details for our " + Server.HtmlEncode(city) + " Office";
+                dtlView.DataSource = ds.Tables[0];
+                dtlView.DataBind();
+            }
+        }
+
+        // Forgot Password - Reflected XSS
+        public partial class ForgotPassword : System.Web.UI.Page
+        {
+        
+            private IDbProvider du = Settings.CurrentDbProvider;
+            
+            protected void Page_Load(object sender, EventArgs e)
+            {
+                if (!Page.IsPostBack)
+                {
+                    PanelForgotPasswordStep2.Visible = false;
+                    PanelForgotPasswordStep3.Visible = false;
+                }
+            }
+
+            protected void ButtonCheckEmail_Click(object sender, EventArgs e)
+            {
+                string[] result = du.GetSecurityQuestionAndAnswer(txtEmail.Text);
+                
+                if (string.IsNullOrEmpty(result[0]))
+                {
+                    labelQuestion.Text = "That email address was not found in our database!";
+                    PanelForgotPasswordStep2.Visible = false;
+                    PanelForgotPasswordStep3.Visible = false;
+                    
+                    return;
+                }    
+                labelQuestion.Text = "Here is the question we have on file for you: <strong>" + result[0] + "</strong>";
+                PanelForgotPasswordStep2.Visible = true;
+                PanelForgotPasswordStep3.Visible = false;
+                
+                    
+                HttpCookie cookie = new HttpCookie("encr_sec_qu_ans");
+
+                //encode twice for more security!
+
+                cookie.Value = Encoder.Encode(Encoder.Encode(result[1]));
+
+                Response.Cookies.Add(cookie);
+            }
+
+            // Forgot Password - Stored XSS
+
+            protected void ButtonRecoverPassword_Click(object sender, EventArgs e)
+            {
+                try
+                {
+                    //get the security question answer from the cookie
+                    string encrypted_password = Request.Cookies["encr_sec_qu_ans"].Value.ToString();
+                    
+                    //decode it (twice for extra security!)
+                    string security_answer = Encoder.Decode(Encoder.Decode(encrypted_password));
+                    
+                    if (security_answer.Trim().ToLower().Equals(txtAnswer.Text.Trim().ToLower()))
+                    {
+                        PanelForgotPasswordStep1.Visible = false;
+                        PanelForgotPasswordStep2.Visible = false;
+                        PanelForgotPasswordStep3.Visible = true;
+                        labelPassword.Text = "Security Question Challenge Successfully Completed! <br/>Your password is: " + getPassword(txtEmail.Text);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    labelMessage.Text = "An unknown error occurred - Do you have cookies turned on? Further Details: " + ex.Message;
+                }
+            }
+
+            protected void ButtonGoToCustomerLogin_Click(object sender, EventArgs e)
+            {
+                Response.Redirect("CustomerLogin.aspx");
+            }
+
+            string getPassword(string email)
+            {
+                string password = du.GetPasswordByEmail(email);
+                return password;
+            }
+
         }
 
     }
