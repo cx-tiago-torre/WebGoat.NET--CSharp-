@@ -452,6 +452,8 @@ namespace OWASP.WebGoat.NET
                 {
                     byte[] dataBytes = Encoding.UTF8.GetBytes(data);
                     byte[] hashBytes = sha1.ComputeHash(dataBytes);
+
+                    HttpCookie cookie = new HttpCookie("encr_sec_qu_ans");
                     
                     StringBuilder sb = new StringBuilder();
                     foreach (byte b in hashBytes)
@@ -468,36 +470,6 @@ namespace OWASP.WebGoat.NET
                 // Returns generic fallback value that could mask security issues
                 Console.WriteLine(ex.Message);
                 return "0000000000000000000000000000000000000000";  // Returns fake hash
-            }
-        }
-
-        // Stored XSS source
-        public DataSet GetProductDetails(string productCode)
-        {
-            string sql = string.Empty;
-            SqliteDataAdapter da;
-            DataSet ds = new DataSet();
-
-
-            using (SqliteConnection connection = new SqliteConnection(_connectionString))
-            {
-                connection.Open();
-
-                sql = "select * from Products where productCode = '" + productCode + "'";
-                da = new SqliteDataAdapter(sql, connection);
-                da.Fill(ds, "products");
-
-                sql = "select * from Comments where productCode = '" + productCode + "'";
-                da = new SqliteDataAdapter(sql, connection);
-                da.Fill(ds, "comments");
-
-                DataRelation dr = new DataRelation("prod_comments",
-                ds.Tables["products"].Columns["productCode"], //category table
-                ds.Tables["comments"].Columns["productCode"], //product table
-                false);
-
-                ds.Relations.Add(dr);
-                return ds;
             }
         }
 
