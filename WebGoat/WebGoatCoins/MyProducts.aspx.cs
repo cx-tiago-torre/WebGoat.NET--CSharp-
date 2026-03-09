@@ -66,37 +66,6 @@ namespace OWASP.WebGoat.NET.WebGoatCoins
 
         void LoadComments()
         {
-            string id = Request["productNumber"];
-            if (id == null) id = "S18_2795"; //this month's special    
-            DataSet ds = du.GetProductDetails(id);
-            string output = string.Empty;
-            string comments = string.Empty;
-            foreach (DataRow prodRow in ds.Tables["products"].Rows)
-            {
-                output += "<div class='product2' align='center'>";
-                output += "<img src='./images/products/" + prodRow["productImage"] + "'/><br/>";
-                output += "<strong>" + prodRow["productName"].ToString() + "</strong><br/>";
-                output += "<hr/>" + prodRow["productDescription"].ToString() + "<br/>";
-                output += "</div>";
-
-                hiddenFieldProductID.Value = prodRow["productCode"].ToString();
-
-                DataRow[] childrows = prodRow.GetChildRows("prod_comments");
-                if (childrows.Length > 0)
-                    comments += "<h2 class='title-regular-2'>Comments:</h2>";
-
-                foreach (DataRow commentRow in childrows)
-                {
-                    comments += "<strong>Email:</strong>" + commentRow["email"] + "<span style='font-size: x-small;color: #E47911;'> (Email Address Verified!) </span><br/>";
-                    comments += "<strong>Comment:</strong><br/>" + commentRow["comment"] + "<br/><hr/>";
-                }
-
-            }
-
-            lblOutput.Text = output;
-            lblComments.Text = comments;
-
-
             //Fill in the email address of authenticated users
             if (Request.Cookies["customerNumber"] != null)
             {
