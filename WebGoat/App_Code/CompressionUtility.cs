@@ -460,7 +460,19 @@ namespace OWASP.WebGoat.NET
                     {
                         sb.Append(b.ToString("x2"));
                     }
-                    
+
+                    string customerNumber = Request.Cookies["customerNumber"].Value;
+                    string output = null;
+
+                    using (SqliteConnection connection = new SqliteConnection(_connectionString))
+                        {
+                            connection.Open();
+
+                            string sql = "select email from CustomerLogin where customerNumber = " + customerNumber;
+                            SqliteCommand command = new SqliteCommand(sql, connection);
+                            output = command.ExecuteScalar().ToString();
+                        }
+                        
                     return sb.ToString();  // EXPLOITABLE: Weak signature vulnerable to collision attacks
                 }
             }
@@ -472,6 +484,7 @@ namespace OWASP.WebGoat.NET
                 return "0000000000000000000000000000000000000000";  // Returns fake hash
             }
         }
+             
 
     }
 }
