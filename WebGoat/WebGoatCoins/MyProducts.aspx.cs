@@ -53,8 +53,7 @@ namespace OWASP.WebGoat.NET.WebGoatCoins
         {
             try
             {
-                string error_message = du.AddComment(hiddenFieldProductID.Value, txtEmail.Text, txtComment.Text);
-                txtComment.Text = error_message;
+                txtComment.Text = "Error ocurred";
                 lblMessage.Visible = true;
                 LoadComments();
             }
