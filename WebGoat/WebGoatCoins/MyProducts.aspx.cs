@@ -77,13 +77,23 @@ namespace OWASP.WebGoat.NET.WebGoatCoins
                 {
                     connection.Open();
 
-                    string sql = "select email from CustomerLogin where customerNumber = " + customerNumber;
+                    // Use parameterized query to prevent SQL injection
+                    string sql = "select email from CustomerLogin where customerNumber = @customerNumber";
                     SqliteCommand command = new SqliteCommand(sql, connection);
-                    email = command.ExecuteScalar().ToString();
+                    command.Parameters.AddWithValue("@customerNumber", customerNumber);
+
+                    object result = command.ExecuteScalar();
+                    if (result != null)
+                    {
+                        email = result.ToString();
+                    }
                 }
 
-                txtEmail.Text = email;
-                txtEmail.ReadOnly = true;
+                if (!string.IsNullOrEmpty(email))
+                {
+                    txtEmail.Text = email;
+                    txtEmail.ReadOnly = true;
+                }
             }
         }
 
