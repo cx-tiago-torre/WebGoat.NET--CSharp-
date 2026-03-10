@@ -5,7 +5,7 @@ namespace OWASP.WebGoat.NET.App_Code.DB
 {
     public class DbConstants
     {
-        //Keys 
+        // Keys
         public const string KEY_DB_TYPE = "dbtype";
         public const string KEY_CLIENT_EXEC = "client";
         public const string KEY_HOST = "host";
@@ -15,7 +15,7 @@ namespace OWASP.WebGoat.NET.App_Code.DB
         public const string KEY_UID = "uid";
         public const string KEY_PWD = "pwd";    
         
-        //DB Types
+        // DB Types
         public const string DB_TYPE_MYSQL = "MySql";
         public const string DB_TYPE_SQLITE = "Sqlite";
         public const string CONFIG_EXT = "config";
