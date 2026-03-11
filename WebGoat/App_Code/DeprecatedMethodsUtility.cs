@@ -145,34 +145,32 @@ namespace OWASP.WebGoat.NET.App_Code
         
         /// <summary>
         /// Demonstrates deprecated log4net methods from version 1.2.10
-        /// TODO: Updated for log4net 2.x compatibility - DOMConfigurator removed, configurators now require repository parameter
         /// </summary>
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         
         public static void LogWithDeprecatedMethods(string message)
         {
-            // log4net 2.x update: DOMConfigurator is completely removed, use XmlConfigurator instead
-            var repository = LogManager.GetRepository(Assembly.GetEntryAssembly());
-            XmlConfigurator.Configure(repository);
-            XmlConfigurator.ConfigureAndWatch(repository, new System.IO.FileInfo("log4net.config"));
+            // Deprecated: DOMConfigurator is completely deprecated in log4net 2.x
+            DOMConfigurator.Configure();
+            DOMConfigurator.ConfigureAndWatch(new System.IO.FileInfo("log4net.config"));
             
-            // log4net 2.x update: XmlConfigurator now requires repository parameter
-            XmlConfigurator.Configure(repository);
-            XmlConfigurator.ConfigureAndWatch(repository, new System.IO.FileInfo("log4net.config"));
+            // Deprecated: XmlConfigurator without repository parameter
+            XmlConfigurator.Configure();
+            XmlConfigurator.ConfigureAndWatch(new System.IO.FileInfo("log4net.config"));
             
-            // log4net 2.x update: BasicConfigurator now requires repository parameter
-            BasicConfigurator.Configure(repository);
+            // Deprecated: BasicConfigurator without repository parameter  
+            BasicConfigurator.Configure();
             
-            // ThreadContext usage - still available in log4net 2.x
+            // Deprecated: ThreadContext usage (replaced with LogicalThreadContext in 2.x)
             log4net.ThreadContext.Properties["method"] = "LogWithDeprecatedMethods";
             log4net.ThreadContext.Stacks["callstack"].Push(message);
             
-            // log4net 2.x update: Hierarchy manipulation with repository context
-            var hierarchy = (log4net.Repository.Hierarchy.Hierarchy)repository;
-            hierarchy.Root.Level = Level.Debug;
-            hierarchy.Configured = true;
+            // Deprecated: Direct hierarchy manipulation
+            var hierarchy = (log4net.Repository.Hierarchy.Hierarchy)LogManager.GetRepository();
+            hierarchy.Root.Level = Level.Debug; // Direct level setting deprecated
+            hierarchy.Configured = true; // Direct property access deprecated
             
-            // Logger.GetLogger with string parameter still supported
+            // Deprecated: Logger.GetLogger with string parameter pattern
             var stringLogger = LogManager.GetLogger("DeprecatedLogger");
             
             stringLogger.Info("Deprecated logger: " + message);
