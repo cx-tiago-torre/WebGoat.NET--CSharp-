@@ -8,7 +8,7 @@ using System.Diagnostics;
 using log4net.Config;
 using log4net.Appender;
 using log4net.Layout;
-using log4net.Core; // For deprecated hierarchy access
+using log4net.Core; // For hierarchy access
 using YamlDotNet.Serialization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -44,19 +44,20 @@ namespace OWASP.WebGoat.NET.App_Code
         {
             lock (_lock)
             {
-                // Deprecated: ThreadContext usage (replaced with LogicalThreadContext in 2.x)
+                // ThreadContext usage - compatible with log4net 2.x
                 log4net.ThreadContext.Properties["application"] = "WebGoat.NET";
                 log4net.ThreadContext.Stacks["initialization"].Push("Settings.Init");
                 
-                // Deprecated: Direct hierarchy manipulation without repository context
-                var hierarchy = (log4net.Repository.Hierarchy.Hierarchy)LogManager.GetRepository();
-                hierarchy.Root.Level = log4net.Core.Level.All; // Deprecated direct access
-                hierarchy.Configured = true; // Deprecated property usage
+                // Repository-aware hierarchy manipulation for log4net 2.x
+                var repository = LogManager.GetRepository(Assembly.GetEntryAssembly());
+                var hierarchy = (log4net.Repository.Hierarchy.Hierarchy)repository;
+                hierarchy.Root.Level = log4net.Core.Level.All;
+                hierarchy.Configured = true;
                 
                 if (Debugger.IsAttached)
-                    BasicConfigurator.Configure(); // Deprecated without repository
+                    BasicConfigurator.Configure(repository);
                 else
-                    XmlConfigurator.Configure(); // Deprecated without repository
+                    XmlConfigurator.Configure(repository);
 
                 string configPath = Path.Combine(PARENT_CONFIG_PATH, DefaultConfigName);
                 DefaultConfigPath = server.MapPath(configPath);

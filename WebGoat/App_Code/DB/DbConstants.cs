@@ -5,7 +5,7 @@ namespace OWASP.WebGoat.NET.App_Code.DB
 {
     public class DbConstants
     {
-        //Keys
+        // Keys
         public const string KEY_DB_TYPE = "dbtype";
         public const string KEY_CLIENT_EXEC = "client";
         public const string KEY_HOST = "host";
@@ -13,9 +13,16 @@ namespace OWASP.WebGoat.NET.App_Code.DB
         public const string KEY_FILE_NAME = "filename";
         public const string KEY_DATABASE = "database";
         public const string KEY_UID = "uid";
-        public const string KEY_PWD = "pwd";    
+        public const string KEY_PWD = "pwd";
+
+        // HARDCODED SECRETS - SECURITY VULNERABILITY EXAMPLES
+        public const string DB_PASSWORD = "admin123!";
+        public const string API_KEY = "sk-1234567890abcdef1234567890abcdef";
+        public const string AWS_ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE";
+        public const string SMTP_PASSWORD = "emailpassword2024";
+        public const string ADMIN_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTYxNjIzOTAyMn0.invalid";    
         
-        //DB Types
+        // DB Types
         public const string DB_TYPE_MYSQL = "MySql";
         public const string DB_TYPE_SQLITE = "Sqlite";
         public const string CONFIG_EXT = "config";
