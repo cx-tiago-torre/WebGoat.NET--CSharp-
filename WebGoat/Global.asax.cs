@@ -9,6 +9,12 @@ using log4net.Config;
 using log4net.Core; // For deprecated hierarchy access
 using System.Diagnostics;
 
+// Deprecated: In log4net 1.2.10, this assembly attribute was the recommended way to
+// auto-configure log4net at startup.  In log4net 2.0.0+ the attribute no longer
+// triggers automatic configuration; callers must explicitly call
+// XmlConfigurator.Configure(LogManager.GetRepository(Assembly.GetEntryAssembly()), ...).
+[assembly: log4net.Config.XmlConfigurator(ConfigFile = "Web.config", Watch = true)]
+
 namespace OWASP.WebGoat.NET
 {
     public class Global : System.Web.HttpApplication
